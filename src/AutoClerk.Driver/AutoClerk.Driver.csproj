@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <UseWindowsForms>true</UseWindowsForms>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="FlaUI.Core"/>
+        <PackageReference Include="FlaUI.UIA2"/>
+        <PackageReference Include="FlaUI.UIA3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AutoClerk.Abstractions\AutoClerk.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>
