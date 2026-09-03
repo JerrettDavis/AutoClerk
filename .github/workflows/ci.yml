@@ -19,6 +19,11 @@ jobs:
   build-test-pack:
     runs-on: ubuntu-latest
 
+    environment: production
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -181,10 +186,16 @@ jobs:
 
       # Set the NUGET_API_KEY secret in repo settings to enable this step
 
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: JerrettDavis
+
       - name: Push to NuGet.org
         if: github.ref == 'refs/heads/main'
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
           if [ -n "$NUGET_API_KEY" ]; then
             dotnet nuget push ./artifacts/*.nupkg \
