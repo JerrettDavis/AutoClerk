@@ -65,6 +65,10 @@ jobs:
           ASSEMBLY_VERSION="${GitVersion_AssemblySemVer:-${{ steps.gitversion.outputs.assemblySemVer }}}"
           FILE_VERSION="${GitVersion_AssemblySemFileVer:-${{ steps.gitversion.outputs.assemblySemFileVer }}}"
 
+          if [[ "$PACKAGE_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
+            PACKAGE_VERSION="${BASH_REMATCH[1]}-ci.${BASH_REMATCH[2]}"
+          fi
+
           if [[ -z "$PACKAGE_VERSION" || -z "$ASSEMBLY_VERSION" || -z "$FILE_VERSION" ]]; then
             echo "GitVersion did not produce required version values." >&2
             env | sort | grep -E '^GitVersion_' >&2 || true
@@ -170,8 +174,21 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git tag v${{ env.PACKAGE_VERSION }}
-          git push origin v${{ env.PACKAGE_VERSION }}
+          if git rev-parse "v${PACKAGE_VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${PACKAGE_VERSION} already exists. Skipping tag push."
+          else
+            git tag "v${PACKAGE_VERSION}"
+            if ! git push origin "v${PACKAGE_VERSION}"; then
+              echo "Push failed - tag may have been pushed concurrently. Verifying..."
+              git fetch --tags
+              if git rev-parse "v${PACKAGE_VERSION}" >/dev/null 2>&1; then
+                echo "Tag v${PACKAGE_VERSION} confirmed on remote. Treating as success."
+              else
+                echo "Tag push failed and tag is not on remote. Aborting." >&2
+                exit 1
+              fi
+            fi
+          fi
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
